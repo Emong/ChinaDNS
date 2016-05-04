@@ -806,6 +806,9 @@ static int should_filter_query(ns_msg msg, struct in_addr dns_addr) {
           return 1;
         }
       }
+    // AAAA record is being poisoned,I recieve  '200:2::/32'. May,2016.
+    } else if(type == ns_t_aaaa && dns_is_chn) {
+       return 1;
     } else if (type == ns_t_aaaa || type == ns_t_ptr) {
       // if we've got an IPv6 result or a PTR result, pass
       return 0;
