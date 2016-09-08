@@ -781,9 +781,11 @@ static int should_filter_query(ns_msg msg, struct in_addr dns_addr) {
     const u_char *rd;
     type = ns_rr_type(rr);
     rd = ns_rr_rdata(rr);
+    if (verbose)
+      printf("|type:%d,",type);
     if (type == ns_t_a) {
       if (verbose)
-        printf("%s, ", inet_ntoa(*(struct in_addr *)rd));
+        printf("%s", inet_ntoa(*(struct in_addr *)rd));
       //I recieve some CHN bad ips. So check bad ip in -m mode.
       //if (!compression) {
         r = bsearch(rd, ip_list.ips, ip_list.entries, sizeof(struct in_addr),
@@ -809,6 +811,10 @@ static int should_filter_query(ns_msg msg, struct in_addr dns_addr) {
       }
     // AAAA record is being poisoned,I recieve  '200:2::/32'. May,2016.
     } else if(type == ns_t_aaaa && dns_is_chn) {
+       return 1;
+    } else if(type == ns_t_cname && dns_is_chn && rrmax == 1) {
+       if (verbose)
+            printf("response type is cname,but has no records.");
        return 1;
     } else if (type == ns_t_aaaa || type == ns_t_ptr) {
       // if we've got an IPv6 result or a PTR result, pass
