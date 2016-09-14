@@ -571,6 +571,9 @@ static void dns_handle_local() {
   int sended = 0;
   const char *question_hostname;
   ns_msg msg;
+  ns_rr rr;
+  int rrnum, rrmax;
+  u_int type;
   len = recvfrom(local_sock, global_buf, BUF_SIZE, 0, src_addr, &src_addrlen);
   if (len > 0) {
     if (local_ns_initparse((const u_char *)global_buf, len, &msg) < 0) {
@@ -582,8 +585,19 @@ static void dns_handle_local() {
     // TODO generate id for each request to avoid conflicts
     query_id = ns_msg_id(msg);
     question_hostname = hostname_from_question(msg);
-    LOG("request %s\n", question_hostname);
-
+    //LOG("request %s\n", question_hostname);
+    //parse DNS query type
+    rrmax = ns_msg_count(msg, ns_s_qd);
+    type = 0;
+    if(rrmax) {
+      if (local_ns_parserr(&msg, ns_s_qd, rrnum, &rr)) {
+        ERR("local_ns_parserr");
+      }
+      else {
+        type = ns_rr_type(rr);
+        LOG("request %s, type:%d\n",question_hostname,type);
+      }
+    }
     // assign a new id
     uint16_t new_id;
     do {
@@ -622,7 +636,7 @@ static void dns_handle_local() {
           memcpy(compression_buf + off + 1, global_buf + off, len - off);
           compression_buf[off-1] = '\xc0';
           compression_buf[off] = '\x04';
-          for (i = 0; i < has_chn_dns; i++) {
+          for (i = 0; i < has_chn_dns && type != ns_t_aaaa; i++) {
             if (-1 == sendto(remote_sock, global_buf, len, 0,
                              dns_server_addrs[i].addr,
                              dns_server_addrs[i].addrlen))
@@ -781,11 +795,11 @@ static int should_filter_query(ns_msg msg, struct in_addr dns_addr) {
     const u_char *rd;
     type = ns_rr_type(rr);
     rd = ns_rr_rdata(rr);
-    if (verbose)
-      printf("|type:%d,",type);
+//    if (verbose)
+//      printf("|type:%d,",type);
     if (type == ns_t_a) {
       if (verbose)
-        printf("%s", inet_ntoa(*(struct in_addr *)rd));
+        printf("%s,", inet_ntoa(*(struct in_addr *)rd));
       //I recieve some CHN bad ips. So check bad ip in -m mode.
       //if (!compression) {
         r = bsearch(rd, ip_list.ips, ip_list.entries, sizeof(struct in_addr),
@@ -812,10 +826,10 @@ static int should_filter_query(ns_msg msg, struct in_addr dns_addr) {
     // AAAA record is being poisoned,I recieve  '200:2::/32'. May,2016.
     } else if(type == ns_t_aaaa && dns_is_chn) {
        return 1;
-    } else if(type == ns_t_cname && dns_is_chn && rrmax == 1) {
-       if (verbose)
-            printf("response type is cname,but has no records.");
-       return 1;
+    //} else if(type == ns_t_cname && dns_is_chn && rrmax == 1) {
+       //if (verbose)
+       //     printf("response type is cname,but has no records.");
+       //return 1;
     } else if (type == ns_t_aaaa || type == ns_t_ptr) {
       // if we've got an IPv6 result or a PTR result, pass
       return 0;
