@@ -74,6 +74,7 @@ static char compression_buf[BUF_SIZE];
 static int verbose = 0;
 static int compression = 0;
 static int bidirectional = 0;
+static int reset_truncated = 0;
 
 static const char *default_dns_servers =
 "114.114.114.114,223.5.5.5,8.8.8.8,8.8.4.4,208.67.222.222:443,208.67.222.222:5353";
@@ -241,7 +242,7 @@ static int setnonblock(int sock) {
 
 static int parse_args(int argc, char **argv) {
   int ch;
-  while ((ch = getopt(argc, argv, "hb:p:s:l:c:y:dmvV")) != -1) {
+  while ((ch = getopt(argc, argv, "hb:p:s:l:c:y:dmtvV")) != -1) {
     switch (ch) {
       case 'h':
         usage();
@@ -270,6 +271,8 @@ static int parse_args(int argc, char **argv) {
       case 'm':
         compression = 1;
         break;
+      case 't':
+        reset_truncated = 1;
       case 'v':
         verbose = 1;
         break;
@@ -693,6 +696,11 @@ static void dns_handle_remote() {
       id_addr->addr->sa_family = AF_INET;
       uint16_t ns_old_id = htons(id_addr->old_id);
       memcpy(global_buf, &ns_old_id, 2);
+      //big reply with authority records,not necessary,ignore it.
+      if(reset_truncated && ns_msg_getflag(msg,ns_f_tc)) {
+        local_ns_reset_truncated_flag(&msg);
+        printf("truncated flag reset - ");
+      }
       r = should_filter_query(msg, ((struct sockaddr_in *)src_addr)->sin_addr);
       if (r == 0) {
         if (verbose)
@@ -934,6 +942,7 @@ Forward DNS requests.\n\
                         114.114.114.114,208.67.222.222:443,8.8.8.8\n\
   -m                    use DNS compression pointer mutation\n\
                         (backlist and delaying would be disabled)\n\
+  -t                    reset truncated flag.\n\
   -v                    verbose logging\n\
   -h                    show this help message and exit\n\
   -V                    print version and exit\n\

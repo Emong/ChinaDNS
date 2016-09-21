@@ -247,3 +247,8 @@ static int local_ns_labellen(const unsigned char *lp)
 
 	return l;
 }
+void local_ns_reset_truncated_flag(ns_msg *handle)
+{
+  handle->_flags &= 0xfdffu;
+  ((u_int16_t *)(handle->_msg))[1] = htons(handle->_flags);
+}
