@@ -942,7 +942,7 @@ Forward DNS requests.\n\
                         114.114.114.114,208.67.222.222:443,8.8.8.8\n\
   -m                    use DNS compression pointer mutation\n\
                         (backlist and delaying would be disabled)\n\
-  -t                    reset truncated flag.\n\
+  -t                    reset truncated flag\n\
   -v                    verbose logging\n\
   -h                    show this help message and exit\n\
   -V                    print version and exit\n\

@@ -5,10 +5,10 @@ PKG_VERSION:=1.3.4
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_URL:=https://github.com/Emong/ChinaDNS/releases/download/$(PKG_VERSION)
-PKG_SOURCE:=chinadns-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=ChinaDNS-$(PKG_VERSION).tar.gz
 PKG_MAINTAINER:=clowwindy <clowwindy42@gmail.com>
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)/chinadns-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)/ChinaDNS-$(PKG_VERSION)
 
 PKG_INSTALL:=1
 PKG_FIXUP:=autoreconf
