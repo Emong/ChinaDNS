@@ -696,11 +696,6 @@ static void dns_handle_remote() {
       id_addr->addr->sa_family = AF_INET;
       uint16_t ns_old_id = htons(id_addr->old_id);
       memcpy(global_buf, &ns_old_id, 2);
-      //big reply with authority records,not necessary,ignore it.
-      if(reset_truncated && ns_msg_getflag(msg,ns_f_tc)) {
-        local_ns_reset_truncated_flag(&msg);
-        printf("truncated flag reset - ");
-      }
       r = should_filter_query(msg, ((struct sockaddr_in *)src_addr)->sin_addr);
       if (r == 0) {
         if (verbose)
@@ -782,6 +777,20 @@ static int should_filter_query(ns_msg msg, struct in_addr dns_addr) {
     dns_is_chn = test_ip_in_list(dns_addr, &chnroute_list);
     dns_is_foreign = !dns_is_chn;
   }
+  //big reply with authority records,not necessary,ignore it.
+  rrmax = ns_msg_count(msg, ns_s_qd);
+  if(rrmax) {
+    if (local_ns_parserr(&msg, ns_s_qd, rrnum, &rr)) {
+      ERR("local_ns_parserr");
+    }
+    else {
+      if(ns_rr_type(rr) == ns_t_a && reset_truncated && ns_msg_getflag(msg,ns_f_tc)) {
+        local_ns_reset_truncated_flag(&msg);
+        printf("request type is A,reset truncated flag - ");
+      }
+    }
+  }  
+  //parse answers
   rrmax = ns_msg_count(msg, ns_s_an);
   if (rrmax == 0) {
     if (compression) {
